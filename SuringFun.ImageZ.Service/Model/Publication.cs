@@ -20,5 +20,10 @@ public class Publication
     /// Content of the publication.
     /// </summary>
     public Attachment Attachment { get; set; } = default!;
+
+    /// <summary>
+    /// Date of creation publication.
+    /// </summary>
+    public DateTime CreationDate { get; set; }
 }
 

@@ -61,5 +61,10 @@ public class Emotion
     /// Rerpesents kind of current relation.
     /// </summary>
     public EmotionKind Kind { get; set; }
+
+    /// <summary>
+    /// Emotion creation date.
+    /// </summary>
+    public DateTime CreationDate { get; set; }
 }
 

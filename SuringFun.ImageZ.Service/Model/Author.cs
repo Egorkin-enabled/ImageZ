@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 
 namespace SuringFun.ImageZ.Service.Model;
@@ -13,6 +14,12 @@ public class Author : IdentityUser<int>
     /// Avatar photo. May be missing.
     /// </summary>
     public Attachment? AuthorPhoto { get; set; }
+
+    /// <summary>
+    /// Represents name that is shown publically in the system.
+    /// </summary>
+    [Required]
+    public string PublicName { get; set; } = default!;
 
     /// <summary>
     /// Represents all publications of the Author in the system.

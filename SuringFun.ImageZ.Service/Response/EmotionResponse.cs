@@ -8,6 +8,11 @@ namespace SuringFun.ImageZ.Service.Response;
 public class EmotionResponse
 {
     /// <summary>
+    /// Primary key of emotion.
+    /// </summary>
+    public int Id { get; set; }
+
+    /// <summary>
     /// Author, who's express emotion.
     /// </summary>
     public AuthorResponse Source { get; set; } = default!;
@@ -28,5 +33,10 @@ public class EmotionResponse
     /// Determinates which emotion is expressed.
     /// </summary>
     public Emotion.EmotionKind EmotionKind { get; set; }
+
+    /// <summary>
+    /// Unix time creation date of emotion.
+    /// </summary>
+    public long CreationDate { get; set; }
 }
 

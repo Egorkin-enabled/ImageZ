@@ -7,7 +7,7 @@ namespace SuringFun.ImageZ.Service.Service;
 /// <summary>
 /// Database context for the system. 
 /// </summary>
-public class DbContext :
+public class ServiceDbContext :
     Microsoft.AspNetCore.
         Identity.EntityFrameworkCore.
             IdentityDbContext<Author, IdentityRole<int>, int>

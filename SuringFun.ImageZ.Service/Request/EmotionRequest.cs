@@ -6,7 +6,7 @@ namespace SuringFun.ImageZ.Service.Request;
 /// <summary>
 /// Represent body for `POST /relations`.
 /// </summary>
-public class RelationRequest
+public class EmotionRequest
 {
     /// <summary>
     /// Represents kind of target.
