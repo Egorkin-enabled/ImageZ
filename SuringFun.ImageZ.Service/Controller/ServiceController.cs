@@ -21,9 +21,9 @@ public class ServiceController :
     /// Gets info about author.
     /// </summary>
     [AllowAnonymous]
-    [HttpGet("/authors/{authorId}")]
+    [HttpGet("authors/{authorId}")]
     public IActionResult GetAuthor(
-        ServiceDbContext context,
+        [FromServices] ServiceDbContext context,
         [FromRoute] int authorId
     )
     {
@@ -38,12 +38,12 @@ public class ServiceController :
     }
 
     [Authorize]
-    [HttpPost("/authors/@me/photo")]
+    [HttpPost("authors/@me/photo")]
     public async Task<IActionResult> PostPhoto(
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
         [FromServices] IFileService fileService,
-        [FromServices] HttpContext httpContext,
+        [FromServices] IHttpContextAccessor httpContext,
 
         [FromBody] PhotoRequest photoRequest
     )
@@ -51,7 +51,7 @@ public class ServiceController :
         Author author =
             await AuthorizationController.GetSessionAuthor(
                 userManager,
-                httpContext
+                httpContext.HttpContext!
             ) ??
             throw new InvalidOperationException();
 
@@ -89,18 +89,18 @@ public class ServiceController :
     }
 
     [Authorize]
-    [HttpDelete("/authors/@me/photo")]
+    [HttpDelete("authors/@me/photo")]
     public async Task<IActionResult> PostPhoto(
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
         [FromServices] IFileService fileService,
-        [FromServices] HttpContext httpContext
+        [FromServices] IHttpContextAccessor httpContext
     )
     {
         Author author =
             await AuthorizationController.GetSessionAuthor(
                 userManager,
-                httpContext
+                httpContext.HttpContext!
             ) ??
             throw new InvalidOperationException();
 
@@ -124,7 +124,7 @@ public class ServiceController :
     }
 
     [Authorize]
-    [HttpPost("/publications")]
+    [HttpPost("publications")]
     public async Task<IActionResult> PostPublication(
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
@@ -175,12 +175,12 @@ public class ServiceController :
     }
 
     [Authorize]
-    [HttpDelete("/publications/{publicationId}")]
+    [HttpDelete("publications/{publicationId}")]
     public async Task<IActionResult> DeletePublication(
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
         [FromServices] IFileService fileService,
-        [FromServices] HttpContext httpContext,
+        [FromServices] IHttpContextAccessor httpContext,
 
         [FromRoute] int publicationId
     )
@@ -188,7 +188,7 @@ public class ServiceController :
         Author author =
             await AuthorizationController.GetSessionAuthor(
                 userManager,
-                httpContext
+                httpContext.HttpContext!
             ) ??
             throw new InvalidOperationException();
 
@@ -215,7 +215,7 @@ public class ServiceController :
     }
 
     [AllowAnonymous]
-    [HttpGet("/publications/{publicationId}")]
+    [HttpGet("publications/{publicationId}")]
     public IActionResult GetPublication(
         [FromServices] ServiceDbContext dbContext,
         [FromRoute] int publicationId
@@ -233,7 +233,7 @@ public class ServiceController :
     }
 
     [AllowAnonymous]
-    [HttpGet("/publications")]
+    [HttpGet("publications")]
     public IActionResult GetPublicationsPage(
         [FromServices] DbContext dbContext,
 
@@ -315,7 +315,7 @@ public class ServiceController :
     }
 
     [AllowAnonymous]
-    [HttpGet("/emotions")]
+    [HttpGet("emotions")]
     public IActionResult GetEmotionsPage(
         // [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
@@ -367,11 +367,11 @@ public class ServiceController :
     }
 
     [Authorize]
-    [HttpDelete("/emotions/{emotionId}")]
+    [HttpDelete("emotions/{emotionId}")]
     public async Task<IActionResult> DeleteEmotion(
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
-        [FromServices] HttpContext httpContext,
+        [FromServices] IHttpContextAccessor httpContext,
 
         [FromRoute] int emotionId
     )
@@ -379,7 +379,7 @@ public class ServiceController :
         Author author =
             await AuthorizationController.GetSessionAuthor(
                 userManager,
-                httpContext
+                httpContext.HttpContext!
             ) ??
             throw new InvalidOperationException();
 
@@ -400,11 +400,11 @@ public class ServiceController :
     }
 
     [Authorize]
-    [HttpPost("/emotions")]
+    [HttpPost("emotions")]
     public async Task<IActionResult> PostEmotion(
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
-        [FromServices] HttpContext httpContext,
+        [FromServices] IHttpContextAccessor httpContextA,
 
         [FromBody] EmotionRequest emotionRequest
     )
@@ -418,7 +418,7 @@ public class ServiceController :
         Author author =
             await AuthorizationController.GetSessionAuthor(
                 userManager,
-                httpContext
+                httpContextA.HttpContext!
             ) ??
             throw new InvalidOperationException();
 

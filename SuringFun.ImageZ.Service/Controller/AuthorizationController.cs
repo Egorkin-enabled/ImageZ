@@ -1,10 +1,13 @@
+using System.Buffers.Text;
 using System.Diagnostics;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SuringFun.ImageZ.Service.Model;
 using SuringFun.ImageZ.Service.Response;
+using static SuringFun.ImageZ.Essentials.AuthorizationConsts;
 
 namespace SuringFun.ImageZ.Service.Controller;
 
@@ -17,49 +20,6 @@ public class AuthorizationController :
     Microsoft.AspNetCore.Mvc.Controller
 {
     /// <summary>
-    /// Email claim in `Authorization` JWT token.
-    /// </summary>
-    public const string ClaimEmail
-        = "e-mail";
-
-    /// <summary>
-    /// Email claim in `Authorization` JWT token.
-    /// </summary>
-    public const string ClaimLogin
-        = "login";
-
-    /// <summary>
-    /// Email claim in `Authorization` JWT token.
-    /// </summary>
-    public const string ClaimPublicName
-        = "public-name";
-
-    /// <summary>
-    /// Email claim in `Authorization` JWT token.
-    /// </summary>
-    public const string ClaimAvatar
-        = "avatar-url";
-
-    /// <summary>
-    /// Email claim in `Authorization` JWT token.
-    /// </summary>
-    public const string ClaimProviderName
-        = "provider-name";
-
-    /// <summary>
-    /// Email claim in `Authorization` JWT token.
-    /// </summary>
-    public const string ClaimProviderKey
-        = "provider-key";
-
-    /// <summary>
-    /// Email claim in `Authorization` JWT token.
-    /// </summary>
-    public const string ClaimProviderDisplay
-        = "provider-display";
-
-
-    /// <summary>
     /// Uses JWT token to register an author in the system.
     /// Excludes username and email.
     /// 
@@ -69,10 +29,12 @@ public class AuthorizationController :
     [HttpPost]
     public async Task<IActionResult> RegisterWithJWT(
         // Rely on dependency injection.
-        [FromServices] HttpContext context,
+        [FromServices] IHttpContextAccessor contextAccess,
         [FromServices] UserManager<Author> manager
     )
     {
+        var context = contextAccess.HttpContext!;
+
         // XXX: Should Am I Log this process? Where & how?
         //      Seems through `[FromServices] ILogger logger`.
 
@@ -101,10 +63,6 @@ public class AuthorizationController :
         // Info
         var email =
             user.FindFirstValue(ClaimEmail) ??
-            throw new InvalidOperationException();
-
-        var login =
-            user.FindFirstValue(ClaimLogin) ??
             throw new InvalidOperationException();
 
         var publicName = user.FindFirstValue(ClaimPublicName);
@@ -142,18 +100,23 @@ public class AuthorizationController :
         else
         {
             // We need to register author. We're not sure 
-            // if it has successful now. Let check it out.
+            // if it has success now. Let check it out.
 
             // User is not present currently.
 
             // Create user entity to register.
+
+            byte[] stamp = new byte[128];
+            RandomNumberGenerator.Create().GetBytes(stamp);
+
             author = new Author()
             {
                 Email = email,
-                UserName = login,
-                PublicName = publicName ?? "Alien"
+                UserName = email,
+                PublicName = publicName ?? "Alien",
+                // SecurityStamp = Convert.ToBase64String(stamp)
             };
-
+            await manager.CreateAsync(author);
             var result = await manager.AddLoginAsync(
                 author,
                 new UserLoginInfo(
@@ -175,6 +138,9 @@ public class AuthorizationController :
 
                 Debug.Assert(author is not null);
             }
+            else
+                return StatusCode(500, result.Errors);
+
         }
 
         if (processHasSuccess)
@@ -194,15 +160,18 @@ public class AuthorizationController :
     /// <param name="context"></param>
     /// <param name="manager"></param>
     [Authorize]
-    [HttpGet("/@me")]
+    [HttpGet("@me")]
     public async Task<IActionResult> GetAuthorInfo(
         // Rely on dependency injection.
-        [FromServices] HttpContext context,
+        [FromServices] IHttpContextAccessor contextAccess,
         [FromServices] UserManager<Author> manager
     )
     {
         Author? author =
-            await GetSessionAuthor(manager, context);
+            await GetSessionAuthor(
+                manager,
+                contextAccess.HttpContext!
+                );
 
         if (author is null)
             // It seems user forgot to register into system.

@@ -12,6 +12,12 @@ public class ServiceDbContext :
         Identity.EntityFrameworkCore.
             IdentityDbContext<Author, IdentityRole<int>, int>
 {
+    public ServiceDbContext(DbContextOptions options) : base(options)
+    {}
+
+    protected ServiceDbContext()
+    {}
+
     protected override void OnModelCreating(
         ModelBuilder _)
     {
@@ -19,15 +25,6 @@ public class ServiceDbContext :
         base.OnModelCreating(_);
 
         // `Emotion` configuration.
-        _.Entity<Emotion>().
-            HasIndex(
-                x => new
-                {
-                    x.Source,
-                    x.AuthorTarget,
-                    x.PublicationTarget
-                }).
-            IsUnique();
 
         _.Entity<Emotion>().
             HasOne(x => x.Source).
@@ -56,12 +53,14 @@ public class ServiceDbContext :
         _.Entity<Publication>().
             HasOne(x => x.Attachment).
             WithOne().
+            HasForeignKey<Attachment>().
             OnDelete(DeleteBehavior.Cascade);
 
         // `Author` configuration.
         _.Entity<Author>().
             HasOne(x => x.AuthorPhoto).
             WithOne().
+            HasForeignKey<Attachment>().
             IsRequired(false);
     }
 }
