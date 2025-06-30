@@ -2,12 +2,12 @@ using LinqKit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.TagHelpers.Cache;
 using Microsoft.EntityFrameworkCore;
 using SuringFun.ImageZ.Service.Model;
 using SuringFun.ImageZ.Service.Request;
 using SuringFun.ImageZ.Service.Response;
-using SuringFun.ImageZ.Service.Service;
+using SuringFun.ImageZ.Service.Service.Databases;
+using SuringFun.ImageZ.Service.Service.FileServices;
 
 namespace SuringFun.ImageZ.Service.Controller;
 
@@ -43,15 +43,18 @@ public class ServiceController :
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
         [FromServices] IFileService fileService,
-        [FromServices] IHttpContextAccessor httpContext,
+        [FromServices] IHttpContextAccessor accessor,
 
         [FromBody] PhotoRequest photoRequest
     )
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         Author author =
             await AuthorizationController.GetSessionAuthor(
                 userManager,
-                httpContext.HttpContext!
+                accessor.HttpContext!
             ) ??
             throw new InvalidOperationException();
 
@@ -70,11 +73,23 @@ public class ServiceController :
                     ) : null
         };
 
+        dbContext.Add(newPhoto);
+
+        if (oldPhoto is not null)
+            dbContext.Remove(oldPhoto);
+
         author.AuthorPhoto = newPhoto;
 
-        dbContext.Set<Author>().Update(author);
-        var task = dbContext.SaveChangesAsync();
+        var changes = dbContext.ChangeTracker.Entries();
 
+        await dbContext.SaveChangesAsync();
+        await userManager.UpdateAsync(author);
+
+        // if (oldPhoto is not null)
+        // {
+        //     dbContext.Set<Attachment>().Remove(oldPhoto);
+        //     await dbContext.SaveChangesAsync();
+        // }
         // TODO: DRY!
         if (oldPhoto is not null)
         {
@@ -84,7 +99,6 @@ public class ServiceController :
                 fileService.DeleteFile(oldPhoto.PreviewKey);
         }
 
-        await task;
         return Ok();
     }
 
@@ -94,13 +108,13 @@ public class ServiceController :
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
         [FromServices] IFileService fileService,
-        [FromServices] IHttpContextAccessor httpContext
+        [FromServices] IHttpContextAccessor accessor
     )
     {
         Author author =
             await AuthorizationController.GetSessionAuthor(
                 userManager,
-                httpContext.HttpContext!
+                accessor.HttpContext!
             ) ??
             throw new InvalidOperationException();
 
@@ -180,7 +194,7 @@ public class ServiceController :
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
         [FromServices] IFileService fileService,
-        [FromServices] IHttpContextAccessor httpContext,
+        [FromServices] IHttpContextAccessor accessor,
 
         [FromRoute] int publicationId
     )
@@ -188,7 +202,7 @@ public class ServiceController :
         Author author =
             await AuthorizationController.GetSessionAuthor(
                 userManager,
-                httpContext.HttpContext!
+                accessor.HttpContext!
             ) ??
             throw new InvalidOperationException();
 
@@ -317,9 +331,7 @@ public class ServiceController :
     [AllowAnonymous]
     [HttpGet("emotions")]
     public IActionResult GetEmotionsPage(
-        // [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
-        // [FromServices] HttpContext httpContext,
 
         [FromQuery] int offset,
         [FromQuery] int limit,
@@ -371,7 +383,7 @@ public class ServiceController :
     public async Task<IActionResult> DeleteEmotion(
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
-        [FromServices] IHttpContextAccessor httpContext,
+        [FromServices] IHttpContextAccessor accessor,
 
         [FromRoute] int emotionId
     )
@@ -379,7 +391,7 @@ public class ServiceController :
         Author author =
             await AuthorizationController.GetSessionAuthor(
                 userManager,
-                httpContext.HttpContext!
+                accessor.HttpContext!
             ) ??
             throw new InvalidOperationException();
 

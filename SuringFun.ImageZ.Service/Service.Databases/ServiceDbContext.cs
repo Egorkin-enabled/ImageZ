@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using SuringFun.ImageZ.Service.Model;
 
-namespace SuringFun.ImageZ.Service.Service;
+namespace SuringFun.ImageZ.Service.Service.Databases;
 
 /// <summary>
 /// Database context for the system. 
@@ -13,10 +14,10 @@ public class ServiceDbContext :
             IdentityDbContext<Author, IdentityRole<int>, int>
 {
     public ServiceDbContext(DbContextOptions options) : base(options)
-    {}
+    { }
 
     protected ServiceDbContext()
-    {}
+    { }
 
     protected override void OnModelCreating(
         ModelBuilder _)
@@ -25,6 +26,9 @@ public class ServiceDbContext :
         base.OnModelCreating(_);
 
         // `Emotion` configuration.
+
+        _.Entity<Emotion>().
+            HasKey(x => x.Id);
 
         _.Entity<Emotion>().
             HasOne(x => x.Source).
@@ -43,6 +47,9 @@ public class ServiceDbContext :
 
         // `Publication` configuration.
         _.Entity<Publication>().
+            HasKey(x => x.Id);
+
+        _.Entity<Publication>().
             HasOne(x => x.Author).
             WithMany(x => x.Publications).
             OnDelete(DeleteBehavior.SetNull); // Allow 
@@ -50,17 +57,21 @@ public class ServiceDbContext :
                                               // to exist 
                                               // without author.       
 
-        _.Entity<Publication>().
-            HasOne(x => x.Attachment).
-            WithOne().
-            HasForeignKey<Attachment>().
-            OnDelete(DeleteBehavior.Cascade);
+        _.Entity<Attachment>().
+            HasOne<Publication>().
+            WithOne(x => x.Attachment).
+            HasForeignKey<Publication>("AttachmentId").
+            IsRequired();
 
         // `Author` configuration.
         _.Entity<Author>().
-            HasOne(x => x.AuthorPhoto).
-            WithOne().
-            HasForeignKey<Attachment>().
+            HasKey(x => x.Id);
+            
+        _.Entity<Attachment>().
+            HasOne<Author>().
+            WithOne(x => x.AuthorPhoto).
+            HasForeignKey<Author>("AuthorPhotoId").
             IsRequired(false);
+
     }
 }

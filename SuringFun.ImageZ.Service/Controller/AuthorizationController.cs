@@ -1,12 +1,11 @@
-using System.Buffers.Text;
 using System.Diagnostics;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SuringFun.ImageZ.Service.Model;
 using SuringFun.ImageZ.Service.Response;
+using SuringFun.ImageZ.Service.Service.Databases;
 using static SuringFun.ImageZ.Essentials.AuthorizationConsts;
 
 namespace SuringFun.ImageZ.Service.Controller;
@@ -30,7 +29,8 @@ public class AuthorizationController :
     public async Task<IActionResult> RegisterWithJWT(
         // Rely on dependency injection.
         [FromServices] IHttpContextAccessor contextAccess,
-        [FromServices] UserManager<Author> manager
+        [FromServices] UserManager<Author> manager,
+        [FromServices] ServiceDbContext dbContext
     )
     {
         var context = contextAccess.HttpContext!;
@@ -106,16 +106,13 @@ public class AuthorizationController :
 
             // Create user entity to register.
 
-            byte[] stamp = new byte[128];
-            RandomNumberGenerator.Create().GetBytes(stamp);
-
             author = new Author()
             {
                 Email = email,
                 UserName = email,
-                PublicName = publicName ?? "Alien",
-                // SecurityStamp = Convert.ToBase64String(stamp)
+                PublicName = publicName ?? "Alien"
             };
+            var entry = dbContext.Entry(author);
             await manager.CreateAsync(author);
             var result = await manager.AddLoginAsync(
                 author,
@@ -145,6 +142,14 @@ public class AuthorizationController :
 
         if (processHasSuccess)
         {
+            // Don't forget to load photo for the case if
+            // author is registered or provided photo during
+            // registration.
+            
+            dbContext.Entry(author).
+                Reference(x => x.AuthorPhoto).
+                Load();
+
             // Nice! We've registered new user! Horay!
             return Ok(author.ToResponse());
         }
@@ -164,7 +169,8 @@ public class AuthorizationController :
     public async Task<IActionResult> GetAuthorInfo(
         // Rely on dependency injection.
         [FromServices] IHttpContextAccessor contextAccess,
-        [FromServices] UserManager<Author> manager
+        [FromServices] UserManager<Author> manager,
+        [FromServices] ServiceDbContext dbContext
     )
     {
         Author? author =
@@ -176,6 +182,10 @@ public class AuthorizationController :
         if (author is null)
             // It seems user forgot to register into system.
             return Forbid();
+
+        dbContext.Entry(author).
+            Reference(x => x.AuthorPhoto).
+            Load();
 
         return Ok(author.ToResponse());
     }

@@ -1,5 +1,4 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,11 +7,9 @@ using static SuringFun.ImageZ.Essentials.JwtConsts;
 
 using static SuringFun.ImageZ.Essentials.EnvironmentHelper;
 using System.Security.Claims;
-using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.AspNetCore.Razor.TagHelpers;
 using System.Globalization;
 
 namespace SuringFun.ImageZ.Authorization.Controller;

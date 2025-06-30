@@ -1,4 +1,4 @@
-namespace SuringFun.ImageZ.Service.Service;
+namespace SuringFun.ImageZ.Service.Service.FileServices;
 
 /// <summary>
 /// Represents key-value access to file contents. Abstraction

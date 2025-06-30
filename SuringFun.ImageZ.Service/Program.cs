@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SuringFun.ImageZ.Service.Model;
-using SuringFun.ImageZ.Service.Service;
 using static SuringFun.ImageZ.Essentials.JwtConsts;
 using static SuringFun.ImageZ.Essentials.EnvironmentHelper;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using SuringFun.ImageZ.Service.Service.RandomServices;
+using SuringFun.ImageZ.Service.Service.Databases;
+using SuringFun.ImageZ.Service.Service.FileServices;
+using Microsoft.Data.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,12 +17,16 @@ builder.Services.
     AddEntityFrameworkStores<ServiceDbContext>();
 builder.Services.AddDbContext<ServiceDbContext>(
     // x => x.UseNpgsql(
-    //     ChallengeEnv(builder.Configuration, EnvDbConStr)
+    //     "Host=localhost:5432;Username=postgres;Password=123;Database=testdb"
     // )
     x => x.UseInMemoryDatabase("Serivce")
 );
 
+builder.Services.AddCryptoRandom();
+builder.Services.AddInMemoryFileService();
+
 builder.Services.AddControllers();
+
 builder.Services.
     AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
     AddJwtBearer(

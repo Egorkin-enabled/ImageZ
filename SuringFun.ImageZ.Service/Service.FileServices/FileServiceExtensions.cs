@@ -1,4 +1,4 @@
-namespace SuringFun.ImageZ.Service.Service;
+namespace SuringFun.ImageZ.Service.Service.FileServices;
 
 /// <summary>
 /// Represent extensions for `IFileService` to keep interface
