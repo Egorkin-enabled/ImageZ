@@ -1,0 +1,461 @@
+{
+	"info": {
+		"_postman_id": "ebfda7e9-dd4d-4408-91d1-e88622da8c72",
+		"name": "ImageZ",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "24321419",
+		"_collection_link": "https://interstellar-station-738680.postman.co/workspace/97217fe9-1e46-48f8-815c-cf1e0e620665/collection/24321419-ebfda7e9-dd4d-4408-91d1-e88622da8c72?action=share&source=collection_link&creator=24321419"
+	},
+	"item": [
+		{
+			"name": "Authorization",
+			"item": [
+				{
+					"name": "RegisterSelfIdentity",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "// {\n//     \"email\": \"Geek@kick.com\",\n//     \"password\":\"Freaky@123\"\n// }\n{\n    \"email\": \"Kick@geek.com\",\n    \"password\": \"Freaky@123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{auth_host}}/authorization/self",
+							"host": [
+								"{{auth_host}}"
+							],
+							"path": [
+								"authorization",
+								"self"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "JWT_SelfIdentity",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"Geek@kick.com\",\n    \"password\":\"Freaky@123\"\n}\n\n// {\n//     \"email\": \"Kick@geek.com\",\n//     \"password\": \"Freaky@123\"\n// }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{auth_host}}/authorization/self/JWT",
+							"host": [
+								"{{auth_host}}"
+							],
+							"path": [
+								"authorization",
+								"self",
+								"JWT"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "API of built-in Identity Provider for \\`SuringFun.ImageZ\\` service."
+		},
+		{
+			"name": "Service",
+			"item": [
+				{
+					"name": "Me",
+					"item": [
+						{
+							"name": "Register",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{JWT_Token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{serv_host}}/authors",
+									"host": [
+										"{{serv_host}}"
+									],
+									"path": [
+										"authors"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "MyInfo",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{JWT_Token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serv_host}}/authors/@me",
+									"host": [
+										"{{serv_host}}"
+									],
+									"path": [
+										"authors",
+										"@me"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "PostPhoto",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{JWT_Token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"content\":\"\",\n    \"preview\":\"\"\n    \n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serv_host}}/authors/@me/photo",
+									"host": [
+										"{{serv_host}}"
+									],
+									"path": [
+										"authors",
+										"@me",
+										"photo"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DeletePhoto",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{JWT_Token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serv_host}}/authors/@me/photo",
+									"host": [
+										"{{serv_host}}"
+									],
+									"path": [
+										"authors",
+										"@me",
+										"photo"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Managing Identity of mine."
+				},
+				{
+					"name": "Publications",
+					"item": [
+						{
+							"name": "GetPublications",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serv_host}}/publications?offset=0&limit=10",
+									"host": [
+										"{{serv_host}}"
+									],
+									"path": [
+										"publications"
+									],
+									"query": [
+										{
+											"key": "authorId",
+											"value": "1",
+											"disabled": true
+										},
+										{
+											"key": "searchPattern",
+											"value": "Wha",
+											"disabled": true
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetPublicationAtIndex",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serv_host}}/publications/{{publication_index}}",
+									"host": [
+										"{{serv_host}}"
+									],
+									"path": [
+										"publications",
+										"{{publication_index}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "PostPublication",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{JWT_Token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"content\": \"\",\n    \"description\": \"# Hi!\\n\\nWhat's wrong?\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serv_host}}/publications",
+									"host": [
+										"{{serv_host}}"
+									],
+									"path": [
+										"publications"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "API for publication managing."
+				},
+				{
+					"name": "Emotions",
+					"item": [
+						{
+							"name": "GetEmotions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serv_host}}/emotions?authorId=1&limit=10&offset=0&targetKind=1",
+									"host": [
+										"{{serv_host}}"
+									],
+									"path": [
+										"emotions"
+									],
+									"query": [
+										{
+											"key": "authorId",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										},
+										{
+											"key": "targetKind",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "PostEmotion",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{JWT_Token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"targetId\": 1,\n    \"targetKind\": 0,\n    \"emotionKind\": -1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serv_host}}/emotions",
+									"host": [
+										"{{serv_host}}"
+									],
+									"path": [
+										"emotions"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DeleteEmotion",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{JWT_Token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"targetId\": 2,\n    \"targetKind\": \"Author\",\n    \"emotionKind\": \"Positive\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serv_host}}/emotions/{{emotion_id}}",
+									"host": [
+										"{{serv_host}}"
+									],
+									"path": [
+										"emotions",
+										"{{emotion_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "API for emotion interaction. Likes/dislikes to author or publication."
+				}
+			],
+			"description": "API of \\`SuringFun.ImageZ\\` service."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "auth_host",
+			"value": "http://localhost:4321",
+			"type": "string"
+		},
+		{
+			"key": "serv_host",
+			"value": "http://localhost:1234",
+			"type": "string"
+		},
+		{
+			"key": "JWT_Token",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "user_index",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}

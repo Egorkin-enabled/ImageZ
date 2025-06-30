@@ -79,18 +79,17 @@ public class ServiceController :
             dbContext.Remove(oldPhoto);
 
         author.AuthorPhoto = newPhoto;
+        var task = dbContext.SaveChangesAsync();
 
-        var changes = dbContext.ChangeTracker.Entries();
+        FreePhoto(fileService, oldPhoto);
 
-        await dbContext.SaveChangesAsync();
-        await userManager.UpdateAsync(author);
+        await task;
 
-        // if (oldPhoto is not null)
-        // {
-        //     dbContext.Set<Attachment>().Remove(oldPhoto);
-        //     await dbContext.SaveChangesAsync();
-        // }
-        // TODO: DRY!
+        return Ok();
+    }
+
+    private static void FreePhoto(IFileService fileService, Attachment? oldPhoto)
+    {
         if (oldPhoto is not null)
         {
             fileService.DeleteFile(oldPhoto.ContentKey);
@@ -98,8 +97,6 @@ public class ServiceController :
             if (oldPhoto.PreviewKey is not null)
                 fileService.DeleteFile(oldPhoto.PreviewKey);
         }
-
-        return Ok();
     }
 
     [Authorize]
@@ -118,22 +115,23 @@ public class ServiceController :
             ) ??
             throw new InvalidOperationException();
 
-        Attachment? oldPhoto = author.AuthorPhoto;
+        dbContext.
+            Entry(author).
+            Reference(x => x.AuthorPhoto).
+            Load();
 
+        Attachment? oldPhoto = author.AuthorPhoto;
         author.AuthorPhoto = null;
-        dbContext.Set<Author>().Update(author);
+
+        if (oldPhoto is not null)
+            dbContext.Remove(oldPhoto);
+
         var task = dbContext.SaveChangesAsync();
 
-        // TODO: DRY!
-        if (oldPhoto is not null)
-        {
-            fileService.DeleteFile(oldPhoto.ContentKey);
-
-            if (oldPhoto.PreviewKey is not null)
-                fileService.DeleteFile(oldPhoto.PreviewKey);
-        }
+        FreePhoto(fileService, oldPhoto);
 
         await task;
+
         return Ok();
     }
 
@@ -143,17 +141,27 @@ public class ServiceController :
         [FromServices] UserManager<Author> userManager,
         [FromServices] ServiceDbContext dbContext,
         [FromServices] IFileService fileService,
-        [FromServices] HttpContext httpContext,
+        [FromServices] IHttpContextAccessor accessor,
 
         [FromBody] PublicationRequest publicationRequest
     )
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        HttpContext httpContext = accessor.HttpContext!;
+
         Author author =
             await AuthorizationController.GetSessionAuthor(
                 userManager,
                 httpContext
             ) ??
             throw new InvalidOperationException();
+
+        dbContext.
+            Entry(author).
+            Reference(x => x.AuthorPhoto).
+            Load();
 
         Publication publicationInstance = new()
         {
@@ -182,7 +190,7 @@ public class ServiceController :
             }
         };
 
-        author.Publications.Add(publicationInstance);
+        dbContext.Add(publicationInstance);
         dbContext.SaveChanges();
 
         return Ok(publicationInstance.ToResponse());
@@ -238,6 +246,9 @@ public class ServiceController :
         Publication? publication =
             dbContext.
                 Set<Publication>().
+                Include(x => x.Attachment).
+                Include(x => x.Author).
+                ThenInclude(x => x!.AuthorPhoto).
                 FirstOrDefault(x => x.Id == publicationId);
 
         if (publication is null)
@@ -249,7 +260,7 @@ public class ServiceController :
     [AllowAnonymous]
     [HttpGet("publications")]
     public IActionResult GetPublicationsPage(
-        [FromServices] DbContext dbContext,
+        [FromServices] ServiceDbContext dbContext,
 
         [FromQuery] int offset,
         [FromQuery] int limit,
@@ -268,7 +279,10 @@ public class ServiceController :
 
         var query =
             dbContext.Set<Publication>().
-            AsExpandable(ExpressionOptimizer.visit);
+                Include(x => x.Attachment).
+                Include(x => x.Author).
+                ThenInclude(x => x!.AuthorPhoto).
+                AsExpandable(ExpressionOptimizer.visit);
 
         if (authorId is int authorIdResolved)
             query = query.Where(
@@ -341,6 +355,15 @@ public class ServiceController :
     {
         IQueryable<Emotion> query =
             dbContext.Set<Emotion>().
+            Include(x => x.Source).
+            ThenInclude(x => x.AuthorPhoto).
+            Include(x => x.AuthorTarget).
+            ThenInclude(x => x!.AuthorPhoto).
+            Include(x => x.PublicationTarget).
+            ThenInclude(x => x!.Attachment).
+            Include(x => x.PublicationTarget).
+            ThenInclude(x => x!.Author).
+            ThenInclude(x => x!.AuthorPhoto).
             Where(x => x.Source.Id == authorId).
             OrderByDescending(x => x.CreationDate);
 
@@ -397,6 +420,13 @@ public class ServiceController :
 
         Emotion? emotion =
             dbContext.Set<Emotion>().
+                Include(x => x.AuthorTarget).
+                ThenInclude(x => x!.AuthorPhoto).
+                Include(x => x.PublicationTarget).
+                ThenInclude(x => x!.Attachment).
+                Include(x => x.PublicationTarget).
+                ThenInclude(x => x!.Author).
+                ThenInclude(x => x!.AuthorPhoto).
                 FirstOrDefault(
                     x => x.Source.Id == author.Id &&
                         x.Id == emotionId
@@ -421,6 +451,9 @@ public class ServiceController :
         [FromBody] EmotionRequest emotionRequest
     )
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         (var targetId, var targetKind, var emotionKind) = (
             emotionRequest.TargetId,
             emotionRequest.TargetKind,
@@ -450,21 +483,77 @@ public class ServiceController :
             case Emotion.TargetKind.Author:
                 emotionInstance.AuthorTarget =
                     dbContext.Set<Author>().
+                    Include(x => x.AuthorPhoto).
                     First(x => x.Id == targetId);
                 break;
 
             case Emotion.TargetKind.Publication:
                 emotionInstance.PublicationTarget =
                     dbContext.Set<Publication>().
+                    Include(x => x.Attachment).
                     First(x => x.Id == targetId);
                 break;
         }
 
-        // Emotion formed. Let save it.
-        dbContext.Set<Emotion>().Add(emotionInstance);
-        dbContext.SaveChanges();
+        // Emotion formed.  Let check out if similar emotion 
+        // exists.
 
-        // Return created instance.
-        return Ok(emotionInstance.ToResponse());
+        Emotion? existEmotion =
+            dbContext.
+            Set<Emotion>().
+            FirstOrDefault(
+                x =>
+                x.Source.Id == emotionInstance.Source.Id && (
+                    (
+                        x.AuthorTarget != null &&
+                        emotionInstance.AuthorTarget
+                            != null &&
+                        x.AuthorTarget.Id ==
+                            emotionInstance.AuthorTarget.Id
+                        ) ||
+                    (
+                        x.PublicationTarget != null &&
+                        emotionInstance.PublicationTarget
+                            != null &&
+                        x.PublicationTarget.Id ==
+                            emotionInstance.PublicationTarget.Id
+                    )
+                )
+            );
+
+        if (existEmotion is not null)
+        {
+            // XXX: Not sure how to fight with the race 
+            //      condition without global lock here.
+            //      Maybe, just ignore this problem?
+            //      Or always create new record instead of
+            //      modifying existing one? 
+
+            // Emotion is exist. Let modify it instead of 
+            // insertion.
+
+            if (existEmotion.Kind != emotionInstance.Kind)
+            {
+                // Change our instance.
+                existEmotion.Kind = emotionInstance.Kind;
+                dbContext.SaveChanges();
+            }
+            else
+            { /* Need no any change */ }
+
+            // Return emotion we found.
+            return Ok(existEmotion.ToResponse());
+        }
+        else
+        {
+            // No emotion exist.
+            // Let save formed emotion.
+            dbContext.Set<Emotion>().Add(emotionInstance);
+            dbContext.SaveChanges();
+
+            // Return created instance.
+            return Ok(emotionInstance.ToResponse());
+        }
+        
     }
 }

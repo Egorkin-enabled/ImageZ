@@ -18,7 +18,8 @@ public static class ResponseExtensions
         ) => new()
         {
             ContentKey = attachment.ContentKey,
-            PreviewKey = attachment.PreviewKey
+            PreviewKey = attachment.PreviewKey,
+            Description = attachment.Description
         };
 
 

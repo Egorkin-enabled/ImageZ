@@ -14,5 +14,10 @@ public class AttachmentResponse
     /// S3 key for simplified preview content. May be missing.
     /// </summary>
     public string? PreviewKey { get; set; }
+
+    /// <summary>
+    /// Description of the attachment.
+    /// </summary>
+    public string? Description { get; set; }
 }
 
